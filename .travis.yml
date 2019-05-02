@@ -1,33 +1,35 @@
-sudo: required
-before_install:
-  - sudo apt-get install libao-dev
-  - sudo apt-get install libcurl4-openssl-dev
-  - chmod +x installMPG123.sh
-  - ./installMPG123.sh
-  
-# Enable C++ support
-language: cpp
+# Let travis know the language it needs to run
+language: python
 
-# Compiler selection
-compiler:
-  - gcc
-  
+# Mention the python version in which travis will run the app
+python:
+  - "3.6"
+
+
+# command to install dependencies in the requirements file
+# You can also install the coverage here to avoid it being in the requirements file
+# It is important to avoid things like coverage, pep8 that are not required to run the app
 install:
-  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
-  - mkdir ${DEPS_DIR} && cd ${DEPS_DIR}
+  - pip install -r requirements.txt
   
-  - |
-    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
-      CMAKE_URL="http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz"
-      mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
-      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
-    fi
-  
-  # Go to the Root directory  
-  - cd ..
 
-# Build steps
-script:
-  - mkdir build
-  - cd build
-  - ${DEPS_DIR}/cmake/bin/cmake .. && make
+# command to run tests 
+# This is the script that enables travis to run the tests
+# There are many ways to do dependeing on how you want travis to run and get you coverage
+script: true
+  - nosetests --with-coverage --coverage report
+  
+ # Another command/method to run tests
+script: 
+  - python main.py
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: $HEROKU_API_KEY
+  app: test-my-travisci-project
+  on:
+    repo: jimting/GitProjectTutorialExample
+  #Setting your heroku Procfile here!!!
+  run:
+    "web: gunicorn app_run:app"
